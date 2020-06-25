@@ -4,11 +4,11 @@
 #include <string>
 
 namespace pam {
-  class cursor {
+  class matcher {
   public:
-    cursor(std::string str);
-    cursor(std::string::iterator b, std::string::iterator e);
-    cursor(const cursor& c);
+    matcher(std::string str);
+    matcher(std::string::iterator b, std::string::iterator e);
+    matcher(const matcher& c);
 
     bool match(std::string str);
 
@@ -19,10 +19,10 @@ namespace pam {
     std::string::iterator end;
     std::string::iterator it;
 
-    bool match(cursor& str);
+    bool match(matcher& str);
     bool match_star(char ch);
     bool match_range(char ch);
-    bool match_group(cursor& str);
+    bool match_group(matcher& str);
 
     bool done() const;
     bool has() const;

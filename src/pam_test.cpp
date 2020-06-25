@@ -1,4 +1,3 @@
-#define CATCH_CONFIG_MAIN
 #include "pam.h"
 #include "catch.hpp"
 

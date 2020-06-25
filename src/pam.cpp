@@ -1,5 +1,4 @@
 #include "pam.h"
-#include <iostream>
 
 namespace pam {
   const char arobase = '@';
@@ -18,25 +17,25 @@ namespace pam {
 
 
   bool match(std::string str, std::string pat) {
-      cursor c{pat};
+      matcher c{pat};
       return c.match(str);
   }
 
-  cursor::cursor(std::string str): begin(str.begin()), end(str.end()), it(str.begin()) {}
+  matcher::matcher(std::string str): begin(str.begin()), end(str.end()), it(str.begin()) {}
 
-  cursor::cursor(std::string::iterator b, std::string::iterator e): begin(b), end(e), it(b) {}
+  matcher::matcher(std::string::iterator b, std::string::iterator e): begin(b), end(e), it(b) {}
 
-  cursor::cursor(const cursor& c): begin(c.it), end(c.end), it(c.it) {}
+  matcher::matcher(const matcher& c): begin(c.it), end(c.end), it(c.it) {}
 
-  bool cursor::match(std::string str) {
+  bool matcher::match(std::string str) {
     if (!str.size()) {
       return false;
     }
-    cursor s{str};
+    matcher s{str};
     return match(s);
   }
 
-  bool cursor::match(cursor& str) {
+  bool matcher::match(matcher& str) {
     while (has() && str.has()) {
       switch (current()) {
         case pipe:
@@ -59,7 +58,7 @@ namespace pam {
         case plus: // +(abc|xyz)
         if (peek() == lparen) {
           advance(2);
-          cursor pat = *this;
+          matcher pat = *this;
           int length = 0;
           while (str.has() && pat.has() && pat.match_group(str)) {
             length = pat.length();
@@ -74,11 +73,13 @@ namespace pam {
         case star: // *(abc|xyz) || *
         if (peek() == lparen) {
           advance(2);
-          cursor pat = *this;
+          matcher pat = *this;
+          int length = 0;
           while(str.has() && pat.has() && pat.match_group(str)) {
+            length = pat.length();
             pat.reset();
           }
-          advance(pat.length());
+          advance(length);
         } else {
           skip_chars(star);
           if (done()) {
@@ -92,7 +93,7 @@ namespace pam {
         case mark: // ?(abc|xyz) || ?
         if (peek() == lparen) {
           advance(2);
-          cursor pat = *this;
+          matcher pat = *this;
           int pass = 0;
           int length = 0;
           while (pass <= 1 && str.has() && pat.has()) {
@@ -128,11 +129,11 @@ namespace pam {
     return str.done() && (done() || last == rparen || last == pipe);
   }
 
-  void cursor::reset() {
+  void matcher::reset() {
     it = begin;
   }
 
-  bool cursor::match_star(char ch) {
+  bool matcher::match_star(char ch) {
     while(*it) {
       if (*it == ch) {
         return true;
@@ -142,7 +143,7 @@ namespace pam {
     return false;
   }
 
-  bool cursor::match_range(char ch) {
+  bool matcher::match_range(char ch) {
     if (*it == lsquare) {
       advance();
     }
@@ -170,8 +171,8 @@ namespace pam {
     return found;
   }
 
-  bool cursor::match_group(cursor& in) {
-    cursor s = in;
+  bool matcher::match_group(matcher& in) {
+    matcher s = in;
     int length = 0;
     while(current() != rparen) {
       if (current() == pipe) {
@@ -190,60 +191,60 @@ namespace pam {
     return length > 0;
   }
 
-  bool cursor::done() const {
+  bool matcher::done() const {
     return !has();
   }
 
-  bool cursor::has() const {
+  bool matcher::has() const {
     return it < end;
   }
 
-  std::string cursor::input() const {
+  std::string matcher::input() const {
     return std::string(begin, end);
   }
 
-  std::string cursor::str() const {
+  std::string matcher::str() const {
     return std::string(begin, it);
   }
 
-  std::string cursor::rstr() const {
+  std::string matcher::rstr() const {
     return std::string(it, end);
   }
 
-  int cursor::rlength() const {
+  int matcher::rlength() const {
     return std::distance(it, end);
   }
 
-  int cursor::length() const {
+  int matcher::length() const {
     return std::distance(begin, it);
   }
 
-  int cursor::size() const {
+  int matcher::size() const {
     return std::distance(begin, end);
   }
 
-  char cursor::current() const {
+  char matcher::current() const {
     return *it;
   }
 
-  char cursor::peek() const {
+  char matcher::peek() const {
     return *std::next(it);
   }
 
-  void cursor::advance(int n) {
+  void matcher::advance(int n) {
     if (n <= 0) {
       n = 1;
     }
     it = std::next(it, n);
   }
 
-  void cursor::advance(char ch) {
+  void matcher::advance(char ch) {
     while (*it != ch) {
       advance();
     }
   }
 
-  void cursor::skip_chars(char ch, int n) {
+  void matcher::skip_chars(char ch, int n) {
     int skip = 0;
     while (*it == ch) {
       if (n > 0 && skip >= n) {
