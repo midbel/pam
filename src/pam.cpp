@@ -75,13 +75,10 @@ namespace pam {
         if (peek() == lparen) {
           advance(2);
           cursor pat = *this;
-          int length = 0;
           while(str.has() && pat.has() && pat.match_group(str)) {
-            length = pat.length();
             pat.reset();
           }
-
-          advance(length);
+          advance(pat.length());
         } else {
           skip_chars(star);
           if (done()) {
