@@ -1,4 +1,5 @@
 #include "pam.h"
+#include <iostream>
 
 namespace pam {
   const char arobase = '@';
@@ -31,10 +32,11 @@ namespace pam {
     if (!str.size()) {
       return false;
     }
-    return match(cursor{str});
+    cursor s{str};
+    return match(s);
   }
 
-  bool cursor::match(cursor str) {
+  bool cursor::match(cursor& str) {
     while (has() && str.has()) {
       switch (current()) {
         case pipe:
@@ -49,21 +51,37 @@ namespace pam {
         case arobase: // @(abc|xyz)
         if (peek() == lparen) {
           advance(2);
-          int length = match_group(str);
-          if (!length) {
+          if (!match_group(str)) {
             return false;
           }
-          str.advance(length);
           break;
         }
         case plus: // +(abc|xyz)
         if (peek() == lparen) {
           advance(2);
+          cursor pat = *this;
+          int length = 0;
+          while (str.has() && pat.has() && pat.match_group(str)) {
+            length = pat.length();
+            pat.reset();
+          }
+          if (!length) {
+            return false;
+          }
+          advance(length);
           break;
         }
         case star: // *(abc|xyz) || *
         if (peek() == lparen) {
           advance(2);
+          cursor pat = *this;
+          int length = 0;
+          while(str.has() && pat.has() && pat.match_group(str)) {
+            length = pat.length();
+            pat.reset();
+          }
+
+          advance(length);
         } else {
           skip_chars(star);
           if (done()) {
@@ -77,7 +95,21 @@ namespace pam {
         case mark: // ?(abc|xyz) || ?
         if (peek() == lparen) {
           advance(2);
-          break;
+          cursor pat = *this;
+          int pass = 0;
+          int length = 0;
+          while (pass <= 1 && str.has() && pat.has()) {
+            if (!pat.match_group(str)) {
+              break;
+            }
+            pass++;
+            length = pat.length();
+            pat.reset();
+          }
+          if (pass > 1) {
+            return false;
+          }
+          advance(length);
         }
         break;
         case lsquare:
@@ -141,26 +173,24 @@ namespace pam {
     return found;
   }
 
-  int cursor::match_group(cursor str) {
-    cursor s = str;
+  bool cursor::match_group(cursor& in) {
+    cursor s = in;
     int length = 0;
     while(current() != rparen) {
       if (current() == pipe) {
         advance();
       }
       bool ok = match(s);
-      if (int z = s.length(); ok) {
+      if (int z = s.length(); ok && z) {
         length = z > length ? z : length;
       }
-      while (true) {
+      while (!done() && (current() != pipe && current() != rparen)) {
         advance();
-        if (current() == pipe || current() == rparen) {
-          break;
-        }
       }
       s.reset();
     }
-    return length;
+    in.advance(length);
+    return length > 0;
   }
 
   bool cursor::done() const {
@@ -189,6 +219,10 @@ namespace pam {
 
   int cursor::length() const {
     return std::distance(begin, it);
+  }
+
+  int cursor::size() const {
+    return std::distance(begin, end);
   }
 
   char cursor::current() const {

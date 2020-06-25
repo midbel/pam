@@ -19,10 +19,10 @@ namespace pam {
     std::string::iterator end;
     std::string::iterator it;
 
-    bool match(cursor str);
+    bool match(cursor& str);
     bool match_star(char ch);
     bool match_range(char ch);
-    int match_group(cursor str);
+    bool match_group(cursor& str);
 
     bool done() const;
     bool has() const;
@@ -38,6 +38,7 @@ namespace pam {
     std::string rstr() const;
     int length() const;
     int rlength() const;
+    int size() const;
   };
 
   bool match(std::string str, std::string pat);

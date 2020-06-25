@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     cout << "testpam <pattern> <string...>";
   }
   for (int i = 2; i < argc; i++) {
-    cout << argv[i] << ": " << match(argv[i], argv[1]) << endl;
+    cout << argv[i] << ": " << boolalpha << match(argv[i], argv[1]) << endl;
   }
 
   // cout << "foobar (f??bar): " << boolalpha << match("foobar", "f??bar") << endl;
