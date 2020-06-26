@@ -14,6 +14,8 @@ namespace pam {
 
     void reset();
 
+    operator bool() const;
+
   private:
     std::string::iterator begin;
     std::string::iterator end;

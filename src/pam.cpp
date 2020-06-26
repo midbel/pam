@@ -27,6 +27,10 @@ namespace pam {
 
   matcher::matcher(const matcher& c): begin(c.it), end(c.end), it(c.it) {}
 
+  matcher::operator bool() const {
+    return has();
+  }
+
   bool matcher::match(std::string str) {
     if (!str.size()) {
       return false;
