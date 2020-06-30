@@ -1,49 +1,89 @@
 #ifndef __PAM_H__
 #define __PAM_H__
 
+#include <vector>
 #include <string>
+#include <memory>
 
 namespace pam {
+
   class matcher {
   public:
-    matcher(std::string str);
-    matcher(std::string::iterator b, std::string::iterator e);
-    matcher(const matcher& c);
-
-    bool match(std::string str);
-
-    void reset();
-
-    operator bool() const;
-
-  private:
-    std::string::iterator begin;
-    std::string::iterator end;
-    std::string::iterator it;
-
-    bool match(matcher& str);
-    bool match_star(char ch);
-    bool match_range(char ch);
-    bool match_group(matcher& str);
-
-    bool done() const;
-    bool has() const;
-    char current() const;
-    char peek() const;
-
-    void advance(int n = 0);
-    void advance(char ch);
-    void skip_chars(char ch, int n = 0);
-
-    std::string input() const;
-    std::string str() const;
-    std::string rstr() const;
-    int length() const;
-    int rlength() const;
-    int size() const;
+    virtual ~matcher() {}
+    virtual bool match(std::string::iterator &str) =0;
   };
 
-  bool match(std::string str, std::string pat);
+  class list: public matcher {
+  public:
+    void append(std::unique_ptr<matcher> &m);
+    virtual bool match(std::string::iterator &str);
+    virtual ~list();
+  private:
+    std::vector<std::unique_ptr<matcher>> matchers;
+  };
+
+  class choice: public matcher {
+  public:
+    void append(std::unique_ptr<matcher> &m);
+    virtual bool match(std::string::iterator &str);
+    virtual ~choice();
+  private:
+    std::vector<std::unique_ptr<matcher>> matchers;
+  };
+
+  class simple: public matcher {
+  public:
+    simple(std::string str);
+    virtual bool match(std::string::iterator &str);
+    virtual ~simple();
+  private:
+    std::string pattern;
+
+    bool match_star(char ch, std::string::iterator &it);
+    bool match_range(char ch, std::string::iterator &it);
+    void skip(char ch, std::string::iterator &it);
+  };
+
+  class reverse: public matcher {
+  public:
+    reverse(std::unique_ptr<matcher> &ptr);
+    virtual ~reverse();
+    virtual bool match(std::string::iterator &str);
+  private:
+    std::unique_ptr<matcher> ptr;
+  };
+
+  class one_or_more: public matcher {
+  public:
+    one_or_more(std::unique_ptr<matcher> &ptr);
+    virtual ~one_or_more();
+    virtual bool match(std::string::iterator &str);
+  private:
+    std::unique_ptr<matcher> ptr;
+  };
+
+  class zero_or_more: public matcher {
+  public:
+    zero_or_more(std::unique_ptr<matcher> &ptr);
+    virtual ~zero_or_more();
+    virtual bool match(std::string::iterator &str);
+  private:
+    std::unique_ptr<matcher> ptr;
+  };
+
+  class zero_or_one: public matcher {
+  public:
+    zero_or_one(std::unique_ptr<matcher> &ptr);
+    virtual ~zero_or_one();
+    virtual bool match(std::string::iterator &str);
+  private:
+    std::unique_ptr<matcher> ptr;
+  };
+
+  std::unique_ptr<matcher> compile(std::string pattern);
+  std::unique_ptr<matcher> compile(std::string::iterator &it);
+
+  bool match(std::string str, std::string pattern);
 }
 
 #endif

@@ -10,6 +10,7 @@ TEST_CASE("simple pattern matching", "[simple]") {
 }
 
 TEST_CASE("star pattern matching", "[simple]") {
+  CHECK(pam::match("foo", "foo*"));
   CHECK(pam::match("foobar", "foo*"));
   CHECK(pam::match("foobar", "**bar"));
   CHECK(pam::match("foo*bar", "foo\\*bar"));
@@ -43,7 +44,7 @@ TEST_CASE("zero or more pattern matching", "[extended]") {
 }
 
 TEST_CASE("zero or one pattern matching", "[extended]") {
-  CHECK(pam::match("foobar", "foo?(bar|baz)"));
   CHECK(pam::match("foo", "foo?(bar|baz)"));
+  CHECK_FALSE(pam::match("foobar", "foo?(bar|baz)"));
   CHECK_FALSE(pam::match("foobarbaz", "foo?(bar|baz)"));
 }
