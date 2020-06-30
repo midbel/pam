@@ -1,4 +1,5 @@
 #include "pam.h"
+#include <iostream>
 
 namespace pam {
   const char arobase = '@';
@@ -21,7 +22,7 @@ namespace pam {
 
   bool simple::match(std::string::iterator &str) {
     auto it = pattern.begin();
-    while(*it && *str) {
+    while(*it) {
       switch(*it) {
         case lsquare:
         if (!match_range(*str, it)) {
@@ -31,6 +32,9 @@ namespace pam {
         case star:
         skip(star, it);
         if (!*it) {
+          while(*str) {
+            str = next(str);
+          }
           return true;
         }
         if (!match_star(*it, str)) {
